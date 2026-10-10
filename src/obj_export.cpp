@@ -1,6 +1,7 @@
 #include "obj_export.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <cstdio>
 #include <filesystem>
 #include <fstream>

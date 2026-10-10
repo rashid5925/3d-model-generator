@@ -1,5 +1,7 @@
 #include "platform.hpp"
 
+#include <algorithm>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
