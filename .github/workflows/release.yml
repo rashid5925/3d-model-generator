@@ -2,7 +2,7 @@
 # Trigger: push a tag like v0.2.0  (git tag v0.2.0 && git push origin v0.2.0)
 #
 # Outputs (attached to the GitHub Release):
-#   shapeforge-macos-universal      macOS 11+, Apple Silicon + Intel, Vulkan (MoltenVK) built in
+#   shapeforge-macos-universal      macOS 12+, Apple Silicon + Intel, Vulkan (MoltenVK) built in
 #   shapeforge-linux-x64            glibc 2.28+ (Ubuntu 18.10+, Debian 10+, RHEL 8+)
 #   shapeforge-linux-arm64
 #   shapeforge-windows-x64.exe      Windows 10+, static MSVC runtime
@@ -14,6 +14,7 @@
 #   MACOS_SIGN_IDENTITY, APPLE_ID,
 #   APPLE_TEAM_ID, APPLE_APP_PASSWORD           sign + notarize the macOS binary
 
+# Publish order: GitHub Release, then npm, then the MCP Registry (non-blocking).
 name: release
 
 on:
@@ -44,7 +45,7 @@ jobs:
 
   macos:
     needs: version
-    runs-on: macos-14
+    runs-on: macos-26
     env:
       HAS_SIGNING: ${{ secrets.MACOS_CERT_P12 != '' }}
     steps:
@@ -184,24 +185,6 @@ jobs:
       - name: npm packages
         run: node packaging/npm/build-packages.mjs "$VERSION" dist npm-out
 
-      - name: Publish to npm
-        if: github.event_name == 'push' && env.HAS_NPM_TOKEN == 'true'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          # Platform packages first so the main package's optionalDependencies resolve.
-          for p in shapeforge-darwin shapeforge-linux-x64 shapeforge-linux-arm64 shapeforge-win32-x64 shapeforge; do
-            (cd "npm-out/$p" && npm publish --access public)
-          done
-
-      - name: Publish to the MCP Registry
-        if: github.event_name == 'push' && env.HAS_NPM_TOKEN == 'true'
-        run: |
-          jq --arg v "$VERSION" '.version = $v | .packages[0].version = $v' server.json > server.tmp && mv server.tmp server.json
-          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
-          ./mcp-publisher login github-oidc
-          ./mcp-publisher publish
-
       - name: GitHub Release
         if: github.event_name == 'push'
         uses: softprops/action-gh-release@v2
@@ -214,6 +197,35 @@ jobs:
             dist/shapeforge.mcpb
             dist/SHA256SUMS
           generate_release_notes: true
+
+      - name: Publish to npm
+        if: github.event_name == 'push' && env.HAS_NPM_TOKEN == 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          # Platform packages first so the main package's optionalDependencies resolve.
+          # Versions that already exist are skipped, so a failed run can simply be re-run.
+          for p in shapeforge-darwin shapeforge-linux-x64 shapeforge-linux-arm64 shapeforge-win32-x64 shapeforge; do
+            if npm view "$p@$VERSION" version >/dev/null 2>&1; then
+              echo "$p@$VERSION already published, skipping"
+            else
+              (cd "npm-out/$p" && npm publish --access public)
+            fi
+          done
+
+      - name: Publish to the MCP Registry
+        if: github.event_name == 'push' && env.HAS_NPM_TOKEN == 'true'
+        continue-on-error: true
+        run: |
+          jq --arg v "$VERSION" '.version = $v | .packages[0].version = $v' server.json > server.tmp && mv server.tmp server.json
+          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
+          ./mcp-publisher login github-oidc
+          # The registry verifies the npm package, which can take a moment to become visible.
+          for attempt in 1 2 3 4 5; do
+            ./mcp-publisher publish && exit 0
+            echo "attempt $attempt failed, retrying in 30s"; sleep 30
+          done
+          exit 1
 
       - uses: actions/upload-artifact@v4
         if: github.event_name != 'push'
