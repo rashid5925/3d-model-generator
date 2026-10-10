@@ -1,0 +1,20 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.rashid5925/shapeforge",
+  "description": "Build, render, measure and export 3D models (OBJ) - a 3D modeling toolkit designed for LLMs.",
+  "repository": {
+    "url": "https://github.com/rashid5925/3d-model-generator",
+    "source": "github"
+  },
+  "version": "0.0.0-dev",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "shapeforge",
+      "version": "0.0.0-dev",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

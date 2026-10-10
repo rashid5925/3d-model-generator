@@ -1,0 +1,26 @@
+{
+  "name": "shapeforge",
+  "version": "0.0.0-dev",
+  "description": "3D modeling tools for AI assistants: an MCP server that builds, renders, measures and exports 3D models (OBJ).",
+  "mcpName": "io.github.rashid5925/shapeforge",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rashid5925/3d-model-generator.git"
+  },
+  "homepage": "https://github.com/rashid5925/3d-model-generator#readme",
+  "keywords": ["mcp", "model-context-protocol", "3d", "modeling", "obj", "cad", "llm", "claude", "cursor"],
+  "bin": {
+    "shapeforge": "bin/shapeforge.js"
+  },
+  "files": ["bin/", "README.md"],
+  "engines": {
+    "node": ">=16"
+  },
+  "optionalDependencies": {
+    "shapeforge-darwin": "0.0.0-dev",
+    "shapeforge-linux-x64": "0.0.0-dev",
+    "shapeforge-linux-arm64": "0.0.0-dev",
+    "shapeforge-win32-x64": "0.0.0-dev"
+  }
+}
