@@ -7,7 +7,7 @@ Releases are built and published by `.github/workflows/release.yml` when a
 
 | Artifact | Platform |
 |---|---|
-| `shapeforge-macos-universal` | macOS 11+, Apple Silicon and Intel; MoltenVK linked statically |
+| `shapeforge-macos-universal` | macOS 12+, Apple Silicon and Intel; MoltenVK linked statically |
 | `shapeforge-linux-x64`, `shapeforge-linux-arm64` | glibc 2.28+ (built in `manylinux_2_28`) |
 | `shapeforge-windows-x64.exe` | Windows 10+, static MSVC runtime |
 | `shapeforge.mcpb` | Claude Desktop extension bundle containing all platforms |
@@ -42,7 +42,8 @@ To publish the landing page, set **Settings → Pages → Source** to
    ```
 
 3. The workflow builds and tests on every platform, then publishes in order:
-   npm, MCP Registry, GitHub Release.
+   GitHub Release, npm, MCP Registry. npm versions that already exist are
+   skipped, so a failed run can be re-run safely.
 4. Smoke-test the published build:
 
    ```bash

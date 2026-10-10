@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 if(APPLE AND NOT CMAKE_OSX_DEPLOYMENT_TARGET)
-  set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum macOS version")
+  set(CMAKE_OSX_DEPLOYMENT_TARGET "12.0" CACHE STRING "Minimum macOS version")
 endif()
 if(MSVC)
   # Static MSVC runtime: the .exe has no dependency on the VC++ redistributable.
