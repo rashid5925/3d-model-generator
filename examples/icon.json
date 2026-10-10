@@ -1,0 +1,9 @@
+{"objects": [
+  {"name": "block", "shape": "csg", "op": "subtract", "color": "#f08a24", "resolution": 160,
+   "children": [
+     {"shape": "box", "size": [1, 1, 1], "rounding": 0.12},
+     {"shape": "sphere", "radius": 0.66},
+     {"shape": "cylinder", "radius": 0.18, "height": 2, "rotation": [90, 0, 0]}
+   ]},
+  {"name": "ball", "shape": "sphere", "radius": 0.3, "segments": 64, "rings": 32, "color": "#3a7bd5"}
+]}
