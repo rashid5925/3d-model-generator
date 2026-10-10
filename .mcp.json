@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "shapeforge": {
+      "command": "./build/shapeforge",
+      "args": ["mcp", "--workdir", "out"]
+    }
+  }
+}
