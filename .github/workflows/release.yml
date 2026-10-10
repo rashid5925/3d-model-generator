@@ -8,8 +8,7 @@
 #   shapeforge-windows-x64.exe      Windows 10+, static MSVC runtime
 #   shapeforge.mcpb                 one-click Claude Desktop extension (all platforms)
 #   SHA256SUMS
-# Optional secrets:
-#   NPM_TOKEN                                   publish the npm packages (+ MCP Registry entry)
+# npm and the MCP Registry use GitHub OIDC (no tokens). Optional secrets:
 #   MACOS_CERT_P12, MACOS_CERT_PASSWORD,
 #   MACOS_SIGN_IDENTITY, APPLE_ID,
 #   APPLE_TEAM_ID, APPLE_APP_PASSWORD           sign + notarize the macOS binary
@@ -154,7 +153,6 @@ jobs:
       id-token: write  # MCP Registry login via GitHub OIDC
     env:
       VERSION: ${{ needs.version.outputs.version }}
-      HAS_NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/download-artifact@v4
@@ -164,8 +162,7 @@ jobs:
           merge-multiple: true
       - uses: actions/setup-node@v5
         with:
-          node-version: 20
-          registry-url: "https://registry.npmjs.org"
+          node-version: 24
 
       - name: Checksums
         run: cd dist && chmod +x shapeforge-* && sha256sum shapeforge-* > SHA256SUMS && cat SHA256SUMS
@@ -198,23 +195,22 @@ jobs:
             dist/SHA256SUMS
           generate_release_notes: true
 
+      # npm Trusted Publishing: GitHub's OIDC identity replaces tokens and 2FA prompts.
+      # Each package needs a trusted publisher configured on npmjs.com (docs/RELEASING.md).
       - name: Publish to npm
-        if: github.event_name == 'push' && env.HAS_NPM_TOKEN == 'true'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        if: github.event_name == 'push'
         run: |
-          # Platform packages first so the main package's optionalDependencies resolve.
-          # Versions that already exist are skipped, so a failed run can simply be re-run.
+          npm install -g npm@latest
           for p in shapeforge-darwin shapeforge-linux-x64 shapeforge-linux-arm64 shapeforge-win32-x64 shapeforge; do
             if npm view "$p@$VERSION" version >/dev/null 2>&1; then
               echo "$p@$VERSION already published, skipping"
             else
-              (cd "npm-out/$p" && npm publish --access public)
+              (cd "npm-out/$p" && npm publish --access public --provenance)
             fi
           done
 
       - name: Publish to the MCP Registry
-        if: github.event_name == 'push' && env.HAS_NPM_TOKEN == 'true'
+        if: github.event_name == 'push'
         continue-on-error: true
         run: |
           jq --arg v "$VERSION" '.version = $v | .packages[0].version = $v' server.json > server.tmp && mv server.tmp server.json

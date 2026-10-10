@@ -17,13 +17,26 @@ Releases are built and published by `.github/workflows/release.yml` when a
 
 ## Repository setup (once)
 
-| Secret | Purpose |
-|---|---|
-| `NPM_TOKEN` | npm automation/granular token with publish rights. Also enables the MCP Registry step. |
-| `MACOS_CERT_P12`, `MACOS_CERT_PASSWORD`, `MACOS_SIGN_IDENTITY`, `APPLE_ID`, `APPLE_TEAM_ID`, `APPLE_APP_PASSWORD` | Optional: Developer ID signing and notarization |
+**npm (Trusted Publishing).** CI publishes to npm through GitHub's OIDC
+identity, so no npm token or 2FA prompt is involved. npm only allows this for
+packages that already exist, so the first version is published by hand:
 
-The MCP Registry uses GitHub OIDC (`mcp-publisher login github-oidc`), so it
-needs no secret.
+1. Log in with `npm login`, then run `scripts/publish-npm.sh 0.2.0`. It
+   downloads the release binaries, verifies checksums and publishes all five
+   packages. Your 2FA is requested as usual.
+2. On npmjs.com, open each package (`shapeforge`, `shapeforge-darwin`,
+   `shapeforge-linux-x64`, `shapeforge-linux-arm64`, `shapeforge-win32-x64`) →
+   **Settings → Trusted Publisher → GitHub Actions**, and enter:
+   owner `rashid5925`, repository `3d-model-generator`, workflow `release.yml`.
+
+From then on, every tagged release publishes to npm automatically.
+
+**MCP Registry.** Uses GitHub OIDC (`mcp-publisher login github-oidc`) and needs
+no secret. It runs after npm, because the registry verifies the npm package.
+
+**Optional secrets** for macOS signing and notarization: `MACOS_CERT_P12`,
+`MACOS_CERT_PASSWORD`, `MACOS_SIGN_IDENTITY`, `APPLE_ID`, `APPLE_TEAM_ID`,
+`APPLE_APP_PASSWORD`.
 
 To publish the landing page, set **Settings → Pages → Source** to
 **GitHub Actions**. `pages.yml` then deploys `site/` on every change.
