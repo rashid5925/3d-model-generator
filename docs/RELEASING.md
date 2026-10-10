@@ -25,7 +25,7 @@ packages that already exist, so the first version is published by hand:
    downloads the release binaries, verifies checksums and publishes all five
    packages. Your 2FA is requested as usual.
 2. On npmjs.com, open each package (`shapeforge`, `shapeforge-darwin`,
-   `shapeforge-linux-x64`, `shapeforge-linux-arm64`, `shapeforge-win32-x64`) →
+   `shapeforge-linux-x64`, `shapeforge-linux-arm64`, `@rashid5925/shapeforge-win32-x64`) →
    **Settings → Trusted Publisher → GitHub Actions**, and enter:
    owner `rashid5925`, repository `3d-model-generator`, workflow `release.yml`.
 

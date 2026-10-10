@@ -21,6 +21,6 @@
     "shapeforge-darwin": "0.0.0-dev",
     "shapeforge-linux-x64": "0.0.0-dev",
     "shapeforge-linux-arm64": "0.0.0-dev",
-    "shapeforge-win32-x64": "0.0.0-dev"
+    "@rashid5925/shapeforge-win32-x64": "0.0.0-dev"
   }
 }

@@ -13,8 +13,8 @@ const PACKAGES = {
   "darwin-x64": "shapeforge-darwin",
   "linux-x64": "shapeforge-linux-x64",
   "linux-arm64": "shapeforge-linux-arm64",
-  "win32-x64": "shapeforge-win32-x64",
-  "win32-arm64": "shapeforge-win32-x64", // x64 emulation on Windows on ARM
+  "win32-x64": "@rashid5925/shapeforge-win32-x64",
+  "win32-arm64": "@rashid5925/shapeforge-win32-x64", // x64 emulation on Windows on ARM
 };
 
 const key = `${process.platform}-${process.arch}`;

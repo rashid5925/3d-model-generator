@@ -27,7 +27,7 @@ done
 node "$ROOT/packaging/npm/build-packages.mjs" "$VERSION" "$WORK/dist" "$WORK/npm"
 
 # Platform packages first so the main package's optionalDependencies resolve.
-for p in shapeforge-darwin shapeforge-linux-x64 shapeforge-linux-arm64 shapeforge-win32-x64 shapeforge; do
+for p in shapeforge-darwin shapeforge-linux-x64 shapeforge-linux-arm64 @rashid5925/shapeforge-win32-x64 shapeforge; do
   if npm view "$p@$VERSION" version >/dev/null 2>&1; then
     echo "$p@$VERSION already published, skipping"
   else

@@ -20,7 +20,7 @@ const platforms = [
   { name: "shapeforge-darwin", os: ["darwin"], cpu: ["arm64", "x64"], src: "shapeforge-macos-universal", exe: "shapeforge" },
   { name: "shapeforge-linux-x64", os: ["linux"], cpu: ["x64"], src: "shapeforge-linux-x64", exe: "shapeforge" },
   { name: "shapeforge-linux-arm64", os: ["linux"], cpu: ["arm64"], src: "shapeforge-linux-arm64", exe: "shapeforge" },
-  { name: "shapeforge-win32-x64", os: ["win32"], cpu: ["x64", "arm64"], src: "shapeforge-windows-x64.exe", exe: "shapeforge.exe" },
+  { name: "@rashid5925/shapeforge-win32-x64", os: ["win32"], cpu: ["x64", "arm64"], src: "shapeforge-windows-x64.exe", exe: "shapeforge.exe" },
 ];
 
 const main = JSON.parse(fs.readFileSync(path.join(here, "shapeforge/package.json"), "utf8"));
