@@ -48,7 +48,7 @@ jobs:
     env:
       HAS_SIGNING: ${{ secrets.MACOS_CERT_P12 != '' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Fetch static MoltenVK
         run: |
           curl -fsSL -o mvk.tar "https://github.com/KhronosGroup/MoltenVK/releases/download/${MOLTENVK_VERSION}/MoltenVK-macos.tar"
@@ -103,7 +103,7 @@ jobs:
           - { arch: arm64, runner: ubuntu-24.04-arm, image: "quay.io/pypa/manylinux_2_28_aarch64" }
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       # manylinux_2_28 = old glibc + modern GCC: the binary runs on most distros since 2018.
       - name: Build and test in manylinux
         run: |
@@ -128,7 +128,7 @@ jobs:
     needs: version
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Build
         run: |
           cmake -S . -B build -DSHAPEFORGE_VERSION_OVERRIDE=${{ needs.version.outputs.version }}
@@ -155,13 +155,13 @@ jobs:
       VERSION: ${{ needs.version.outputs.version }}
       HAS_NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/download-artifact@v4
         with:
           pattern: "bin-*"
           path: dist
           merge-multiple: true
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 20
           registry-url: "https://registry.npmjs.org"
