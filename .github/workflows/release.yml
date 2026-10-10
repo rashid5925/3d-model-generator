@@ -1,0 +1,224 @@
+# Builds self-contained binaries for every platform and publishes them.
+# Trigger: push a tag like v0.2.0  (git tag v0.2.0 && git push origin v0.2.0)
+#
+# Outputs (attached to the GitHub Release):
+#   shapeforge-macos-universal      macOS 11+, Apple Silicon + Intel, Vulkan (MoltenVK) built in
+#   shapeforge-linux-x64            glibc 2.28+ (Ubuntu 18.10+, Debian 10+, RHEL 8+)
+#   shapeforge-linux-arm64
+#   shapeforge-windows-x64.exe      Windows 10+, static MSVC runtime
+#   shapeforge.mcpb                 one-click Claude Desktop extension (all platforms)
+#   SHA256SUMS
+# Optional secrets:
+#   NPM_TOKEN                                   publish the npm packages (+ MCP Registry entry)
+#   MACOS_CERT_P12, MACOS_CERT_PASSWORD,
+#   MACOS_SIGN_IDENTITY, APPLE_ID,
+#   APPLE_TEAM_ID, APPLE_APP_PASSWORD           sign + notarize the macOS binary
+
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to build (e.g. 0.2.0) - no publishing happens for manual runs"
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  MOLTENVK_VERSION: v1.4.2
+
+jobs:
+  version:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - id: v
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then v="${GITHUB_REF_NAME#v}"; else v="${{ inputs.version }}"; fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+
+  macos:
+    needs: version
+    runs-on: macos-14
+    env:
+      HAS_SIGNING: ${{ secrets.MACOS_CERT_P12 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch static MoltenVK
+        run: |
+          curl -fsSL -o mvk.tar "https://github.com/KhronosGroup/MoltenVK/releases/download/${MOLTENVK_VERSION}/MoltenVK-macos.tar"
+          tar xf mvk.tar
+          lib=$(find "$PWD/MoltenVK" -path '*macos-arm64_x86_64*' -name libMoltenVK.a | head -1)
+          test -n "$lib"
+          echo "MVK_LIB=$lib" >> "$GITHUB_ENV"
+      - name: Build (universal)
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release "-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64" \
+            -DSHAPEFORGE_MOLTENVK_STATIC_LIB="$MVK_LIB" -DSHAPEFORGE_VERSION_OVERRIDE=${{ needs.version.outputs.version }}
+          cmake --build build --parallel
+      - name: Test
+        run: |
+          ctest --test-dir build --output-on-failure
+          ./build/shapeforge doctor
+          if /usr/bin/pgrep -q oahd; then arch -x86_64 ./build/shapeforge doctor; fi
+          otool -L build/shapeforge
+      - name: Sign and notarize
+        if: env.HAS_SIGNING == 'true'
+        env:
+          MACOS_CERT_P12: ${{ secrets.MACOS_CERT_P12 }}
+          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+          MACOS_SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+        run: |
+          echo "$MACOS_CERT_P12" | base64 --decode > cert.p12
+          security create-keychain -p ci build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p ci build.keychain
+          security import cert.p12 -k build.keychain -P "$MACOS_CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k ci build.keychain
+          codesign --force --options runtime --timestamp -s "$MACOS_SIGN_IDENTITY" build/shapeforge
+          ditto -c -k build/shapeforge notarize.zip
+          xcrun notarytool submit notarize.zip --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" \
+            --password "$APPLE_APP_PASSWORD" --wait
+      - name: Stage
+        run: mkdir -p dist && cp build/shapeforge dist/shapeforge-macos-universal
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bin-macos
+          path: dist/
+
+  linux:
+    needs: version
+    strategy:
+      matrix:
+        include:
+          - { arch: x64, runner: ubuntu-24.04, image: "quay.io/pypa/manylinux_2_28_x86_64" }
+          - { arch: arm64, runner: ubuntu-24.04-arm, image: "quay.io/pypa/manylinux_2_28_aarch64" }
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      # manylinux_2_28 = old glibc + modern GCC: the binary runs on most distros since 2018.
+      - name: Build and test in manylinux
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src ${{ matrix.image }} bash -euxc '
+            PY=/opt/python/cp312-cp312/bin/python3
+            command -v cmake || $PY -m pip install cmake
+            cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DPython3_EXECUTABLE=$PY \
+              -DSHAPEFORGE_VERSION_OVERRIDE=${{ needs.version.outputs.version }}
+            cmake --build build --parallel
+            ctest --test-dir build --output-on-failure
+            ./build/shapeforge doctor
+            ldd build/shapeforge
+            strip build/shapeforge
+            mkdir -p dist && cp build/shapeforge dist/shapeforge-linux-${{ matrix.arch }}
+          '
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bin-linux-${{ matrix.arch }}
+          path: dist/
+
+  windows:
+    needs: version
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: |
+          cmake -S . -B build -DSHAPEFORGE_VERSION_OVERRIDE=${{ needs.version.outputs.version }}
+          cmake --build build --config Release --parallel
+      - name: Test
+        run: |
+          ctest --test-dir build -C Release --output-on-failure
+          ./build/Release/shapeforge.exe doctor
+      - name: Stage
+        shell: bash
+        run: mkdir -p dist && cp build/Release/shapeforge.exe dist/shapeforge-windows-x64.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bin-windows
+          path: dist/
+
+  publish:
+    needs: [version, macos, linux, windows]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      id-token: write  # MCP Registry login via GitHub OIDC
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      HAS_NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: "bin-*"
+          path: dist
+          merge-multiple: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Checksums
+        run: cd dist && chmod +x shapeforge-* && sha256sum shapeforge-* > SHA256SUMS && cat SHA256SUMS
+
+      - name: Claude Desktop extension (.mcpb)
+        run: |
+          mkdir -p mcpb/server
+          cp packaging/mcpb/manifest.json mcpb/
+          cp docs/icon.png mcpb/icon.png
+          cp dist/shapeforge-macos-universal mcpb/server/shapeforge-macos
+          cp dist/shapeforge-linux-x64 mcpb/server/shapeforge-linux-x64
+          cp dist/shapeforge-windows-x64.exe mcpb/server/shapeforge-windows.exe
+          chmod +x mcpb/server/*
+          node -e 'const f="mcpb/manifest.json",m=require("./"+f);m.version=process.env.VERSION;require("fs").writeFileSync(f,JSON.stringify(m,null,2))'
+          npx -y @anthropic-ai/mcpb pack mcpb dist/shapeforge.mcpb
+
+      - name: npm packages
+        run: node packaging/npm/build-packages.mjs "$VERSION" dist npm-out
+
+      - name: Publish to npm
+        if: github.event_name == 'push' && env.HAS_NPM_TOKEN == 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          # Platform packages first so the main package's optionalDependencies resolve.
+          for p in shapeforge-darwin shapeforge-linux-x64 shapeforge-linux-arm64 shapeforge-win32-x64 shapeforge; do
+            (cd "npm-out/$p" && npm publish --access public)
+          done
+
+      - name: Publish to the MCP Registry
+        if: github.event_name == 'push' && env.HAS_NPM_TOKEN == 'true'
+        run: |
+          jq --arg v "$VERSION" '.version = $v | .packages[0].version = $v' server.json > server.tmp && mv server.tmp server.json
+          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish
+
+      - name: GitHub Release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/shapeforge-macos-universal
+            dist/shapeforge-linux-x64
+            dist/shapeforge-linux-arm64
+            dist/shapeforge-windows-x64.exe
+            dist/shapeforge.mcpb
+            dist/SHA256SUMS
+          generate_release_notes: true
+
+      - uses: actions/upload-artifact@v4
+        if: github.event_name != 'push'
+        with:
+          name: release-preview
+          path: |
+            dist/
+            npm-out/
