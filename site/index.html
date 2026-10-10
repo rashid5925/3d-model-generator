@@ -9,100 +9,225 @@
 <meta property="og:description" content="Describe a model. Your AI agent builds it, looks at it, fixes it, and hands you an OBJ file.">
 <meta property="og:image" content="https://rashid5925.github.io/3d-model-generator/assets/hero.png">
 <link rel="icon" href="assets/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  html { background: #fbfaf6; }
-  body {
-    max-width: 42rem;
-    margin: 0 auto;
-    padding: 3rem 1.25rem 4rem;
-    color: #1b1b1b;
-    font: 18px/1.65 Georgia, "Iowan Old Style", "Times New Roman", serif;
+  :root {
+    --bg: #fafaf8;
+    --text: #18181b;
+    --muted: #6b6b70;
+    --border: #e5e3de;
+    --code: #f1f0ec;
+    --accent: #c2410c;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
   }
-  h1 { font-size: 2.2rem; font-weight: normal; margin: 0 0 .25rem; }
-  h2 { font-size: 1.3rem; font-weight: normal; margin: 2.75rem 0 .75rem; padding-bottom: .3rem; border-bottom: 1px solid #d8d4c8; }
-  p, ul, ol { margin: 0 0 1rem; }
-  li { margin-bottom: .35rem; }
-  a { color: #1b1b1b; text-decoration: underline; text-underline-offset: 2px; }
-  a:hover { color: #6b5d3f; }
-  .subtitle { color: #55524a; margin-bottom: 1.5rem; }
-  .links { font-size: .95rem; margin-bottom: 2rem; }
-  figure { margin: 1.5rem 0 2rem; }
-  figure img { display: block; width: 100%; height: auto; border: 1px solid #d8d4c8; }
-  figcaption { font-size: .9rem; color: #6f6b60; margin-top: .5rem; }
-  code, pre { font-family: Menlo, Consolas, "Liberation Mono", monospace; font-size: .85rem; }
-  code { background: #efece3; padding: 0 .2em; }
-  pre { background: #f3f1ea; border: 1px solid #ddd8cb; padding: .75rem 1rem; margin: 0 0 1rem; overflow-x: auto; }
-  pre code { background: none; padding: 0; }
-  table { border-collapse: collapse; width: 100%; font-size: .95rem; margin-bottom: 1rem; }
-  th, td { text-align: left; vertical-align: top; padding: .4rem .6rem .4rem 0; border-bottom: 1px solid #e3dfd4; }
-  th { font-weight: normal; color: #6f6b60; }
-  blockquote { margin: 0 0 1rem; padding-left: 1rem; border-left: 2px solid #d8d4c8; color: #3c3a35; font-style: italic; }
-  footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d4c8; font-size: .9rem; color: #6f6b60; }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121212;
+      --text: #ececec;
+      --muted: #9a9a9f;
+      --border: #2a2a2a;
+      --code: #1b1b1b;
+      --accent: #fb923c;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  body {
+    margin: 0;
+    color: var(--text);
+    font: 16px/1.65 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 20px; }
+  a { color: inherit; text-decoration: underline; text-decoration-color: var(--border); text-underline-offset: 3px; }
+  a:hover { text-decoration-color: currentColor; }
+  code, pre { font-family: var(--mono); font-size: 13.5px; }
+  code { background: var(--code); padding: 1px 5px; border-radius: 4px; }
+
+  nav { border-bottom: 1px solid var(--border); }
+  nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 56px; }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 600; text-decoration: none; }
+  .brand img { width: 22px; height: 22px; border-radius: 4px; }
+  .navlinks { display: flex; gap: 20px; font-size: 14px; color: var(--muted); }
+  .navlinks a { text-decoration: none; }
+  .navlinks a:hover { color: var(--text); }
+
+  header { padding: 64px 0 40px; }
+  .label { font: 500 12px var(--mono); color: var(--accent); text-transform: uppercase; letter-spacing: .06em; margin: 0 0 14px; }
+  h1 { font-size: clamp(32px, 5vw, 44px); line-height: 1.15; letter-spacing: -.025em; font-weight: 600; margin: 0 0 16px; }
+  .lede { font-size: 18px; color: var(--muted); margin: 0 0 28px; max-width: 600px; }
+  .install-box { display: flex; align-items: center; gap: 12px; border: 1px solid var(--border); border-radius: 8px;
+                 background: var(--code); padding: 10px 10px 10px 16px; max-width: 520px; }
+  .install-box code { background: none; padding: 0; flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; }
+  .install-box .prompt { color: var(--muted); font-family: var(--mono); font-size: 13.5px; user-select: none; }
+  button.copy { flex: none; font: 500 12px Inter, sans-serif; color: var(--muted); background: var(--bg);
+                border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+  button.copy:hover { color: var(--text); }
+  .hint { font-size: 14px; color: var(--muted); margin: 12px 0 0; }
+
+  figure { margin: 0 0 8px; }
+  figure img { display: block; width: 100%; height: auto; border: 1px solid var(--border); border-radius: 8px; }
+  figcaption { font-size: 13.5px; color: var(--muted); margin-top: 10px; }
+  .hero-img { aspect-ratio: 16 / 10; object-fit: cover; object-position: 50% 62%; }
+
+  .works { font-size: 14px; color: var(--muted); padding: 28px 0 8px; }
+  .works strong { color: var(--text); font-weight: 500; }
+
+  section { padding: 56px 0 8px; }
+  h2 { font-size: 22px; letter-spacing: -.015em; font-weight: 600; margin: 0 0 8px; }
+  .sub { color: var(--muted); margin: 0 0 28px; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--border); border-left: 1px solid var(--border); }
+  .grid > div { padding: 20px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .grid h3 { font-size: 15px; font-weight: 600; margin: 0 0 4px; }
+  .grid p { margin: 0; font-size: 14.5px; color: var(--muted); }
+
+  ol.steps { list-style: none; padding: 0; margin: 0 0 32px; counter-reset: s; }
+  ol.steps li { counter-increment: s; display: grid; grid-template-columns: 36px 1fr; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  ol.steps li::before { content: "0" counter(s); font: 500 13px var(--mono); color: var(--accent); padding-top: 2px; }
+  ol.steps strong { font-weight: 600; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14.5px; margin-bottom: 8px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 12px 10px 0; border-bottom: 1px solid var(--border); }
+  th { font-weight: 500; color: var(--muted); font-size: 13px; }
+  td code { white-space: nowrap; }
+
+  .prompts { display: grid; gap: 10px; margin-bottom: 16px; }
+  .prompts p { margin: 0; padding: 14px 16px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; }
+
+  footer { margin-top: 64px; border-top: 1px solid var(--border); }
+  footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 24px 20px 40px; font-size: 13.5px; color: var(--muted); }
+
+  @media (max-width: 600px) {
+    .grid { grid-template-columns: 1fr; }
+    .navlinks a.hide-sm { display: none; }
+    header { padding-top: 44px; }
+  }
 </style>
 </head>
 <body>
 
-<h1>shapeforge</h1>
-<p class="subtitle">3D modeling for AI agents. Describe a model, and your agent builds it, looks at it, fixes it, and hands you an OBJ file.</p>
-<p class="links">
-  <a href="https://github.com/rashid5925/3d-model-generator">GitHub</a> ·
-  <a href="https://www.npmjs.com/package/shapeforge">npm</a> ·
-  <a href="https://github.com/rashid5925/3d-model-generator/releases/latest">Download</a> ·
-  MIT license
-</p>
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#"><img src="assets/icon.png" alt="">shapeforge</a>
+    <div class="navlinks">
+      <a class="hide-sm" href="#how">How it works</a>
+      <a class="hide-sm" href="#install">Install</a>
+      <a href="https://github.com/rashid5925/3d-model-generator">GitHub</a>
+    </div>
+  </div>
+</nav>
 
-<figure>
-  <img src="assets/hero.png" alt="A robot and a spoked wheel built by an AI agent with shapeforge" width="1024" height="1024">
-  <figcaption>A robot and a wheel, built entirely by an AI agent through shapeforge's tools.</figcaption>
-</figure>
+<main class="wrap">
+  <header>
+    <p class="label">Open source · MCP server</p>
+    <h1>3D modeling for AI agents</h1>
+    <p class="lede">Describe a model in plain language. Your agent builds it from real parts, looks at it, measures it, fixes it, and hands you an OBJ file.</p>
+    <div class="install-box">
+      <span class="prompt">$</span>
+      <code id="cmd">npx -y shapeforge install claude-code</code>
+      <button class="copy" data-target="cmd">Copy</button>
+    </div>
+    <p class="hint">Works with any MCP agent. No Node.js? <a href="https://github.com/rashid5925/3d-model-generator/releases/latest">Download a release</a>.</p>
+  </header>
 
-<h2>What it is</h2>
-<p>shapeforge is an <a href="https://modelcontextprotocol.io">MCP</a> server: a tool your AI agent can call. It gives the agent a small modeling toolkit designed around how language models work. The agent describes named parts with real dimensions, sees the result rendered from several angles, measures it, corrects mistakes, and exports a standard OBJ file.</p>
-<p>It works with Claude Code, Claude Desktop, GitHub Copilot (VS Code and CLI), Cursor, OpenAI Codex, OpenCode, Windsurf, and any other agent that supports MCP. It's a single native program for macOS, Windows and Linux with nothing else to install.</p>
+  <figure>
+    <img class="hero-img" src="assets/hero.png" alt="A robot and a spoked wheel built by an AI agent with shapeforge" width="1024" height="1024">
+    <figcaption>A robot and a wheel, built entirely by an agent through shapeforge's tools.</figcaption>
+  </figure>
 
-<h2>Install</h2>
-<p>With Node.js installed, one command sets it up for your agent:</p>
-<pre><code>npx -y shapeforge install claude-code</code></pre>
-<p>Replace <code>claude-code</code> with <code>claude-desktop</code>, <code>cursor</code>, <code>windsurf</code>, <code>vscode</code>, <code>copilot-cli</code>, <code>opencode</code>, <code>codex</code>, or <code>all</code>. Then restart the agent.</p>
-<p>Without Node.js, download the program for your system from the <a href="https://github.com/rashid5925/3d-model-generator/releases/latest">latest release</a> and run <code>shapeforge install &lt;agent&gt;</code>. Claude Desktop users can download <code>shapeforge.mcpb</code> instead and double-click it.</p>
+  <p class="works"><strong>Works with</strong> Claude Code · Claude Desktop · GitHub Copilot · Copilot CLI · Cursor · OpenAI Codex · OpenCode · Windsurf</p>
 
-<h2>Try it</h2>
-<p>Ask your agent the way you would brief a designer:</p>
-<blockquote>Model a wooden dining chair, about 45 cm seat height, with a slightly reclined back. Export it as OBJ.</blockquote>
-<blockquote>Make a coffee mug with a handle and a saucer. Show me the front and top views before exporting.</blockquote>
-<p>Models are saved in <code>Documents/shapeforge</code> in your home folder (<code>~/shapeforge</code> on Linux).</p>
+  <section>
+    <h2>Why shapeforge</h2>
+    <p class="sub">Tools like Blender are built for people. shapeforge is built around how language models work.</p>
+    <div class="grid">
+      <div><h3>Describe, don't draw</h3><p>Parts are short descriptions with real dimensions. No vertices and no scripting.</p></div>
+      <div><h3>Sees its own work</h3><p>Front, side, top and 3D views in one image, labeled with axes and a grid.</p></div>
+      <div><h3>Measures exactly</h3><p>Sizes, gaps and contacts catch what pictures miss, like a part floating 1 mm too high.</p></div>
+      <div><h3>Places precisely</h3><p>Rest parts on surfaces, mirror left to right, repeat in rows or rings.</p></div>
+      <div><h3>Boolean shapes</h3><p>Union, subtract and intersect with smooth blending for holes and handles.</p></div>
+      <div><h3>One small binary</h3><p>C++ with Vulkan rendering and a CPU fallback. Runs on macOS, Windows and Linux.</p></div>
+    </div>
+  </section>
 
-<h2>How it works</h2>
-<ol>
-  <li><strong>Describe.</strong> The agent plans the model as named parts: boxes, cylinders, lathe profiles, extrusions, and boolean combinations of them.</li>
-  <li><strong>Build.</strong> shapeforge turns each description into a clean triangle mesh.</li>
-  <li><strong>See.</strong> The agent receives one image with front, side, top and perspective views, labeled with axes and a measuring grid.</li>
-  <li><strong>Measure.</strong> Exact sizes, gaps and contacts catch what pictures miss, for example a backrest floating 1.2 mm above its seat.</li>
-  <li><strong>Fix and export.</strong> Placement tools put parts exactly where they belong. The result is written as OBJ and MTL, one named part per object.</li>
-</ol>
+  <section id="how">
+    <h2>How it works</h2>
+    <p class="sub">A typical session, all inside your normal conversation with the agent.</p>
+    <ol class="steps">
+      <li><span><strong>Describe.</strong> The agent plans named parts such as a seat, four legs and a backrest.</span></li>
+      <li><span><strong>Build.</strong> shapeforge turns each description into a clean mesh.</span></li>
+      <li><span><strong>See.</strong> The agent gets an image of the model from four angles.</span></li>
+      <li><span><strong>Measure.</strong> Exact numbers flag gaps, overlaps and wrong sizes.</span></li>
+      <li><span><strong>Fix and export.</strong> Small edits, then an OBJ and MTL with every part named and colored.</span></li>
+    </ol>
+    <figure>
+      <img src="assets/table_set.png" alt="A dining table scene shown from front, right, top and perspective views" width="804" height="804" loading="lazy">
+      <figcaption>What the agent sees after a render.</figcaption>
+    </figure>
+  </section>
 
-<figure>
-  <img src="assets/table_set.png" alt="A dining table scene shown from front, right, top and perspective views" width="804" height="804" loading="lazy">
-  <figcaption>What the agent sees after a render: four labeled views in one image.</figcaption>
-</figure>
+  <section id="install">
+    <h2>Install</h2>
+    <p class="sub">Run one command for your agent, then restart it. shapeforge writes the agent's config for you.</p>
+    <table>
+      <tr><th>Agent</th><th>Command</th></tr>
+      <tr><td>Claude Code</td><td><code>npx -y shapeforge install claude-code</code></td></tr>
+      <tr><td>Claude Desktop</td><td><code>npx -y shapeforge install claude-desktop</code></td></tr>
+      <tr><td>GitHub Copilot (VS Code)</td><td><code>npx -y shapeforge install vscode</code></td></tr>
+      <tr><td>GitHub Copilot CLI</td><td><code>npx -y shapeforge install copilot-cli</code></td></tr>
+      <tr><td>Cursor</td><td><code>npx -y shapeforge install cursor</code></td></tr>
+      <tr><td>OpenAI Codex</td><td><code>npx -y shapeforge install codex</code></td></tr>
+      <tr><td>OpenCode</td><td><code>npx -y shapeforge install opencode</code></td></tr>
+      <tr><td>Windsurf</td><td><code>npx -y shapeforge install windsurf</code></td></tr>
+    </table>
+    <p class="hint">Without Node.js, download the program for your system from the <a href="https://github.com/rashid5925/3d-model-generator/releases/latest">latest release</a> and run <code>shapeforge install &lt;agent&gt;</code>. Claude Desktop users can also double-click <code>shapeforge.mcpb</code>.</p>
+  </section>
 
-<h2>Tools</h2>
-<table>
-  <tr><th>Tool</th><th>Purpose</th></tr>
-  <tr><td><code>add_objects</code></td><td>Create parts: box, sphere, cylinder, cone, capsule, torus, plane, extrusion, lathe, mesh, boolean (CSG), group</td></tr>
-  <tr><td><code>update_objects</code>, <code>delete_objects</code>, <code>undo</code></td><td>Edit, remove, step back</td></tr>
-  <tr><td><code>place_on</code>, <code>align_objects</code>, <code>mirror_object</code>, <code>array_object</code></td><td>Exact placement, symmetry and repetition</td></tr>
-  <tr><td><code>render</code></td><td>Images from any angle, with labels, highlighting and zoom</td></tr>
-  <tr><td><code>inspect</code></td><td>Sizes, positions, volume, contacts and warnings</td></tr>
-  <tr><td><code>export_obj</code>, <code>save_scene</code>, <code>load_scene</code></td><td>OBJ export and editable scene files</td></tr>
-</table>
+  <section>
+    <h2>Try asking</h2>
+    <p class="sub">Brief the agent the way you would brief a designer.</p>
+    <div class="prompts">
+      <p>Model a wooden dining chair, about 45 cm seat height, with a slightly reclined back. Export it as OBJ.</p>
+      <p>Make a coffee mug with a handle and a saucer. Show me the front and top views before exporting.</p>
+      <p>Build a desk lamp with a round base, a two-part arm and a cone shade. Make sure nothing floats.</p>
+    </div>
+    <p class="hint">Models are saved in <code>Documents/shapeforge</code> (<code>~/shapeforge</code> on Linux).</p>
+  </section>
 
-<h2>Source</h2>
-<p>shapeforge is written in C++20 with no third-party dependencies. It renders with Vulkan and falls back to a built-in CPU renderer. The code, documentation and issue tracker are on <a href="https://github.com/rashid5925/3d-model-generator">GitHub</a>.</p>
+  <section>
+    <h2>Tools</h2>
+    <p class="sub">What the agent can call.</p>
+    <table>
+      <tr><th>Tool</th><th>Purpose</th></tr>
+      <tr><td><code>add_objects</code></td><td>Boxes, spheres, cylinders, cones, capsules, tori, extrusions, lathes, meshes, booleans, groups</td></tr>
+      <tr><td><code>update_objects</code> · <code>delete_objects</code> · <code>undo</code></td><td>Edit, remove, step back</td></tr>
+      <tr><td><code>place_on</code> · <code>align_objects</code> · <code>mirror_object</code> · <code>array_object</code></td><td>Exact placement, symmetry and repetition</td></tr>
+      <tr><td><code>render</code></td><td>Images from any angle, with labels, highlighting and zoom</td></tr>
+      <tr><td><code>inspect</code></td><td>Sizes, positions, volume, contacts and warnings</td></tr>
+      <tr><td><code>export_obj</code> · <code>save_scene</code> · <code>load_scene</code></td><td>OBJ export and editable scene files</td></tr>
+    </table>
+  </section>
+</main>
 
 <footer>
-  shapeforge by <a href="https://github.com/rashid5925">rashid5925</a>. Released under the MIT license.
+  <div class="wrap">
+    <span>shapeforge by <a href="https://github.com/rashid5925">rashid5925</a> · MIT license</span>
+    <span><a href="https://github.com/rashid5925/3d-model-generator">GitHub</a> · <a href="https://www.npmjs.com/package/shapeforge">npm</a> · <a href="https://github.com/rashid5925/3d-model-generator/releases">Releases</a></span>
+  </div>
 </footer>
 
+<script>
+  document.querySelectorAll("button.copy").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const text = document.getElementById(btn.dataset.target).textContent;
+      try { await navigator.clipboard.writeText(text); btn.textContent = "Copied"; }
+      catch (e) { btn.textContent = "Select and copy"; }
+      setTimeout(() => (btn.textContent = "Copy"), 1500);
+    });
+  });
+</script>
 </body>
 </html>
