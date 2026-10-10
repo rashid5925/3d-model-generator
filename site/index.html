@@ -3,437 +3,106 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>shapeforge · Let your AI build 3D models</title>
-<meta name="description" content="shapeforge is an MCP server that lets Claude, Copilot, Cursor, Codex and other AI agents build, see, measure and export 3D models as OBJ files.">
-<meta property="og:title" content="shapeforge · Let your AI build 3D models">
-<meta property="og:description" content="Describe it. Your AI agent builds it, looks at it, fixes it, and hands you an OBJ file.">
-<meta property="og:image" content="https://rashid5925.github.io/3d-model-generator/assets/robot.png">
-<meta property="og:type" content="website">
-<meta name="twitter:card" content="summary_large_image">
+<title>shapeforge: 3D modeling for AI agents</title>
+<meta name="description" content="shapeforge is an MCP server that lets AI agents such as Claude, Copilot, Cursor and Codex build, see, measure and export 3D models as OBJ files.">
+<meta property="og:title" content="shapeforge: 3D modeling for AI agents">
+<meta property="og:description" content="Describe a model. Your AI agent builds it, looks at it, fixes it, and hands you an OBJ file.">
+<meta property="og:image" content="https://rashid5925.github.io/3d-model-generator/assets/hero.png">
 <link rel="icon" href="assets/icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0a0c11;
-    --bg-2: #0f1218;
-    --surface: #141821;
-    --surface-2: #1a1f2a;
-    --border: #252b38;
-    --text: #e9ecf2;
-    --muted: #98a1b3;
-    --faint: #6b7385;
-    --orange: #ff8a3d;
-    --amber: #ffc04d;
-    --blue: #5b9bff;
-    --green: #4fd1a1;
-    --red: #ff6b6b;
-    --radius: 14px;
-    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  }
-  * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
+  html { background: #fbfaf6; }
   body {
-    margin: 0; background: var(--bg); color: var(--text);
-    font: 16px/1.6 Inter, system-ui, -apple-system, Segoe UI, sans-serif;
-    -webkit-font-smoothing: antialiased; overflow-x: hidden;
+    max-width: 42rem;
+    margin: 0 auto;
+    padding: 3rem 1.25rem 4rem;
+    color: #1b1b1b;
+    font: 18px/1.65 Georgia, "Iowan Old Style", "Times New Roman", serif;
   }
-  a { color: inherit; text-decoration: none; }
-  img { max-width: 100%; display: block; }
-  code, pre { font-family: var(--mono); }
-  .wrap { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
-  /* Let grid columns shrink below their content (long one-line commands scroll instead). */
-  .hero .wrap > *, .demo-grid > *, .install > *, .gallery > *, .features > *, .loop > * { min-width: 0; }
-
-  /* nav */
-  nav { position: sticky; top: 0; z-index: 20; backdrop-filter: blur(12px);
-        background: rgba(10,12,17,.72); border-bottom: 1px solid rgba(37,43,56,.6); }
-  nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; }
-  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: -.01em; }
-  .brand img { width: 30px; height: 30px; border-radius: 8px; }
-  .links { display: flex; gap: 28px; align-items: center; font-size: 15px; color: var(--muted); }
-  .links a:hover { color: var(--text); }
-  .gh { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border: 1px solid var(--border);
-        border-radius: 999px; color: var(--text) !important; }
-  .gh:hover { border-color: #3a4256; }
-
-  /* hero */
-  .hero { position: relative; padding: 88px 0 72px; }
-  .hero::before { content: ""; position: absolute; inset: -200px 0 auto 0; height: 760px; z-index: -1;
-    background: radial-gradient(600px 380px at 78% 30%, rgba(255,138,61,.18), transparent 70%),
-                radial-gradient(520px 360px at 15% 10%, rgba(91,155,255,.14), transparent 70%); }
-  .hero .wrap { display: grid; grid-template-columns: 1.02fr 1fr; gap: 56px; align-items: center; }
-  .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--amber);
-             background: rgba(255,192,77,.08); border: 1px solid rgba(255,192,77,.22); padding: 5px 12px; border-radius: 999px; }
-  .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 10px var(--amber); }
-  h1 { font-size: clamp(40px, 5.4vw, 64px); line-height: 1.04; letter-spacing: -.035em; margin: 20px 0 18px; font-weight: 800; }
-  .grad { background: linear-gradient(100deg, var(--orange), var(--amber) 55%, #ffe1a6);
-          -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .lede { font-size: 19px; color: var(--muted); max-width: 540px; margin: 0 0 30px; }
-  .cta { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 26px; }
-  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 10px; font-weight: 600; font-size: 15px;
-         transition: transform .15s ease, box-shadow .15s ease, background .15s; }
-  .btn.primary { background: linear-gradient(135deg, var(--orange), #ff6f2c); color: #1a0d03;
-                 box-shadow: 0 8px 28px rgba(255,138,61,.28); }
-  .btn.primary:hover { transform: translateY(-1px); box-shadow: 0 12px 34px rgba(255,138,61,.38); }
-  .btn.ghost { border: 1px solid var(--border); background: var(--surface); }
-  .btn.ghost:hover { border-color: #3a4256; }
-  .cmd { display: flex; align-items: center; gap: 12px; max-width: 520px; background: var(--bg-2); border: 1px solid var(--border);
-         border-radius: 10px; padding: 10px 10px 10px 16px; font: 14px var(--mono); color: #cfd5e1; }
-  .cmd .p { color: var(--faint); user-select: none; }
-  .cmd code { flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
-  .copy { flex: none; border: 1px solid var(--border); background: var(--surface-2); color: var(--muted); border-radius: 7px;
-          font: 500 12px Inter, sans-serif; padding: 6px 10px; cursor: pointer; }
-  .copy:hover { color: var(--text); }
-  .copy.done { color: var(--green); border-color: rgba(79,209,161,.4); }
-
-  .stage { position: relative; }
-  .frame { border-radius: 18px; overflow: hidden; border: 1px solid var(--border); background: var(--surface);
-           box-shadow: 0 40px 100px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.02) inset;
-           animation: float 7s ease-in-out infinite; }
-  .frame .bar { display: flex; gap: 7px; padding: 12px 14px; border-bottom: 1px solid var(--border); background: var(--bg-2); }
-  .frame .bar i { width: 11px; height: 11px; border-radius: 50%; background: #2c3241; }
-  .hero-img { width: 100%; aspect-ratio: 5 / 4; object-fit: cover; object-position: 50% 62%; }
-  .frame .bar span { margin-left: 8px; font: 12px var(--mono); color: var(--faint); }
-  .chip { position: absolute; font: 500 13px var(--mono); padding: 9px 13px; border-radius: 10px; background: rgba(20,24,33,.92);
-          border: 1px solid var(--border); box-shadow: 0 14px 40px rgba(0,0,0,.45); backdrop-filter: blur(8px); white-space: nowrap; }
-  .chip.c1 { left: -26px; bottom: 64px; color: var(--green); animation: float 6s ease-in-out .8s infinite; }
-  .chip.c2 { right: -18px; top: 74px; color: var(--amber); animation: float 6.5s ease-in-out .3s infinite; }
-  @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-
-  .agents { margin-top: 56px; text-align: center; color: var(--faint); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; }
-  .agent-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 12px; margin-top: 16px; }
-  .agent-row span { font-size: 14px; letter-spacing: 0; text-transform: none; color: var(--muted); padding: 7px 14px;
-                    border: 1px solid var(--border); border-radius: 999px; background: rgba(20,24,33,.6); }
-
-  /* sections */
-  section { padding: 96px 0; }
-  .kicker { color: var(--orange); font-weight: 600; font-size: 14px; letter-spacing: .06em; text-transform: uppercase; }
-  h2 { font-size: clamp(30px, 3.6vw, 44px); line-height: 1.12; letter-spacing: -.025em; margin: 10px 0 14px; }
-  .sub { color: var(--muted); font-size: 18px; max-width: 640px; margin: 0; }
-  .center { text-align: center; }
-  .center .sub { margin: 0 auto; }
-
-  /* demo */
-  .demo { background: linear-gradient(180deg, transparent, rgba(20,24,33,.55) 30%, transparent); }
-  .demo-grid { display: grid; grid-template-columns: .95fr 1.05fr; gap: 28px; margin-top: 48px; align-items: stretch; }
-  .chat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
-  .msg-user { align-self: flex-end; max-width: 88%; background: linear-gradient(135deg, rgba(91,155,255,.22), rgba(91,155,255,.12));
-              border: 1px solid rgba(91,155,255,.3); padding: 12px 15px; border-radius: 14px 14px 4px 14px; font-size: 15px; margin-bottom: 6px; }
-  .call { display: flex; align-items: flex-start; gap: 10px; font: 13.5px/1.5 var(--mono); padding: 10px 12px; border-radius: 10px;
-          background: var(--bg-2); border: 1px solid var(--border); opacity: 0; transform: translateY(6px);
-          transition: opacity .45s ease, transform .45s ease; }
-  .chat.play .call { opacity: 1; transform: none; }
-  .call b { color: var(--blue); font-weight: 500; }
-  .call .r { color: var(--muted); }
-  .call .ok { color: var(--green); }
-  .call .warn { color: var(--amber); }
-  .call .ic { flex: none; width: 18px; text-align: center; }
-  .shot { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; }
-  .shot img { width: 100%; height: auto; }
-  .shot p { margin: 0; padding: 14px 18px; font-size: 14px; color: var(--muted); border-top: 1px solid var(--border); }
-
-  /* features */
-  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 48px; }
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 26px;
-          transition: border-color .2s, transform .2s; }
-  .card:hover { border-color: #384055; transform: translateY(-2px); }
-  .card .icon { width: 42px; height: 42px; border-radius: 11px; display: grid; place-items: center; margin-bottom: 16px;
-                background: rgba(255,138,61,.12); color: var(--orange); }
-  .card:nth-child(3n+2) .icon { background: rgba(91,155,255,.12); color: var(--blue); }
-  .card:nth-child(3n) .icon { background: rgba(79,209,161,.12); color: var(--green); }
-  .card h3 { margin: 0 0 6px; font-size: 18px; letter-spacing: -.01em; }
-  .card p { margin: 0; color: var(--muted); font-size: 15px; }
-
-  /* loop */
-  .loop { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 48px; counter-reset: step; }
-  .step { position: relative; padding: 24px 22px; border-radius: var(--radius); border: 1px solid var(--border);
-          background: linear-gradient(180deg, var(--surface), var(--bg-2)); }
-  .step::before { counter-increment: step; content: "0" counter(step); font: 600 13px var(--mono); color: var(--orange); }
-  .step h3 { margin: 10px 0 6px; font-size: 18px; }
-  .step p { margin: 0; color: var(--muted); font-size: 14.5px; }
-  .step code { font-size: 12.5px; color: var(--blue); }
-
-  /* install */
-  .install { display: grid; grid-template-columns: 260px 1fr; gap: 22px; margin-top: 48px; }
-  .tabs { display: flex; flex-direction: column; gap: 6px; }
-  .tab { text-align: left; background: transparent; border: 1px solid transparent; color: var(--muted); font: 500 15px Inter, sans-serif;
-         padding: 11px 14px; border-radius: 10px; cursor: pointer; }
-  .tab:hover { color: var(--text); background: var(--surface); }
-  .tab[aria-selected="true"] { color: var(--text); background: var(--surface); border-color: var(--border); }
-  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 26px; min-height: 280px; }
-  .panel h3 { margin: 0 0 6px; font-size: 20px; }
-  .panel p { color: var(--muted); margin: 0 0 16px; font-size: 15px; }
-  .panel .cmd { max-width: none; margin-bottom: 12px; }
-  .panel .alt { font-size: 14px; color: var(--faint); margin-top: 18px; }
-  .panel .alt a { color: var(--blue); }
-  .then { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); font-size: 15px; color: var(--muted); }
-  .then em { color: var(--text); font-style: normal; }
-
-  /* gallery */
-  .gallery { display: grid; grid-template-columns: 1.25fr 1fr; grid-template-rows: auto auto; gap: 18px; margin-top: 48px; }
-  .gallery figure { margin: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-  .gallery figure:first-child { grid-row: span 2; }
-  .gallery figcaption { padding: 12px 16px; font-size: 14px; color: var(--muted); border-top: 1px solid var(--border); }
-
-  /* stats + final cta */
-  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 8px; }
-  .stat { text-align: center; padding: 26px 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
-  .stat b { display: block; font-size: 36px; letter-spacing: -.03em; background: linear-gradient(100deg, var(--orange), var(--amber));
-            -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .stat span { color: var(--muted); font-size: 14px; }
-  .final { text-align: center; padding: 72px 28px; border-radius: 22px; border: 1px solid var(--border);
-           background: radial-gradient(500px 220px at 50% 0%, rgba(255,138,61,.16), transparent 70%), var(--surface); }
-  .final .cmd { margin: 26px auto 0; text-align: left; }
-  footer { padding: 40px 0 56px; color: var(--faint); font-size: 14px; }
-  footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
-  footer a:hover { color: var(--text); }
-
-  @media (max-width: 920px) {
-    .hero .wrap, .demo-grid, .install, .gallery { grid-template-columns: 1fr; }
-    .gallery figure:first-child { grid-row: auto; }
-    .features { grid-template-columns: 1fr 1fr; }
-    .loop, .stats { grid-template-columns: 1fr 1fr; }
-    .tabs { flex-direction: row; flex-wrap: wrap; }
-    .chip { display: none; }
-    .links a:not(.gh) { display: none; }
-  }
-  @media (max-width: 560px) {
-    .wrap { padding: 0 16px; }
-    .features, .loop { grid-template-columns: 1fr; }
-    section { padding: 72px 0; }
-    .hero { padding-top: 56px; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { animation: none !important; transition: none !important; }
-    .call { opacity: 1; transform: none; }
-  }
+  h1 { font-size: 2.2rem; font-weight: normal; margin: 0 0 .25rem; }
+  h2 { font-size: 1.3rem; font-weight: normal; margin: 2.75rem 0 .75rem; padding-bottom: .3rem; border-bottom: 1px solid #d8d4c8; }
+  p, ul, ol { margin: 0 0 1rem; }
+  li { margin-bottom: .35rem; }
+  a { color: #1b1b1b; text-decoration: underline; text-underline-offset: 2px; }
+  a:hover { color: #6b5d3f; }
+  .subtitle { color: #55524a; margin-bottom: 1.5rem; }
+  .links { font-size: .95rem; margin-bottom: 2rem; }
+  figure { margin: 1.5rem 0 2rem; }
+  figure img { display: block; width: 100%; height: auto; border: 1px solid #d8d4c8; }
+  figcaption { font-size: .9rem; color: #6f6b60; margin-top: .5rem; }
+  code, pre { font-family: Menlo, Consolas, "Liberation Mono", monospace; font-size: .85rem; }
+  code { background: #efece3; padding: 0 .2em; }
+  pre { background: #f3f1ea; border: 1px solid #ddd8cb; padding: .75rem 1rem; margin: 0 0 1rem; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; font-size: .95rem; margin-bottom: 1rem; }
+  th, td { text-align: left; vertical-align: top; padding: .4rem .6rem .4rem 0; border-bottom: 1px solid #e3dfd4; }
+  th { font-weight: normal; color: #6f6b60; }
+  blockquote { margin: 0 0 1rem; padding-left: 1rem; border-left: 2px solid #d8d4c8; color: #3c3a35; font-style: italic; }
+  footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d8d4c8; font-size: .9rem; color: #6f6b60; }
 </style>
 </head>
 <body>
 
-<nav>
-  <div class="wrap">
-    <a class="brand" href="#"><img src="assets/icon.png" alt="">shapeforge</a>
-    <div class="links">
-      <a href="#how">How it works</a>
-      <a href="#features">Features</a>
-      <a href="#install">Install</a>
-      <a class="gh" href="https://github.com/rashid5925/3d-model-generator">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-        GitHub
-      </a>
-    </div>
-  </div>
-</nav>
+<h1>shapeforge</h1>
+<p class="subtitle">3D modeling for AI agents. Describe a model, and your agent builds it, looks at it, fixes it, and hands you an OBJ file.</p>
+<p class="links">
+  <a href="https://github.com/rashid5925/3d-model-generator">GitHub</a> ·
+  <a href="https://www.npmjs.com/package/shapeforge">npm</a> ·
+  <a href="https://github.com/rashid5925/3d-model-generator/releases/latest">Download</a> ·
+  MIT license
+</p>
 
-<header class="hero">
-  <div class="wrap">
-    <div>
-      <span class="eyebrow"><span class="dot"></span>Open source MCP server</span>
-      <h1>Your AI agent can now <span class="grad">build 3D models.</span></h1>
-      <p class="lede">Describe what you want. Claude, Copilot, Cursor or Codex builds it from real parts, looks at it, measures it, fixes it, and hands you an OBJ file.</p>
-      <div class="cta">
-        <a class="btn primary" href="#install">Get started →</a>
-        <a class="btn ghost" href="https://github.com/rashid5925/3d-model-generator">View on GitHub</a>
-      </div>
-      <div class="cmd"><span class="p">$</span><code>npx -y shapeforge install claude-code</code><button class="copy" data-copy="npx -y shapeforge install claude-code">Copy</button></div>
-    </div>
-    <div class="stage">
-      <div class="frame">
-        <div class="bar"><i></i><i></i><i></i><span>render · perspective view</span></div>
-        <img class="hero-img" src="assets/hero.png" alt="A robot and a spoked wheel built by an AI agent with shapeforge" width="1024" height="1024">
-      </div>
-      <div class="chip c1">✓ export_obj → robot.obj</div>
-      <div class="chip c2">mirror_object arm_left → arm_right</div>
-    </div>
-  </div>
-  <div class="wrap agents">
-    Works with the agents you already use
-    <div class="agent-row">
-      <span>Claude Code</span><span>Claude Desktop</span><span>GitHub Copilot</span><span>Copilot CLI</span>
-      <span>Cursor</span><span>OpenAI Codex</span><span>OpenCode</span><span>Windsurf</span>
-    </div>
-  </div>
-</header>
+<figure>
+  <img src="assets/hero.png" alt="A robot and a spoked wheel built by an AI agent with shapeforge" width="1024" height="1024">
+  <figcaption>A robot and a wheel, built entirely by an AI agent through shapeforge's tools.</figcaption>
+</figure>
 
-<section class="demo" id="how">
-  <div class="wrap">
-    <div class="center">
-      <div class="kicker">How it works</div>
-      <h2>It doesn't just generate. It checks its own work.</h2>
-      <p class="sub">Models make mistakes in 3D. shapeforge lets them catch those mistakes the way a designer would: by looking at the model and measuring it.</p>
-    </div>
-    <div class="demo-grid">
-      <div class="chat" id="chat">
-        <div class="msg-user">Model a small dining table with a chair, a mug and a bowl on it.</div>
-        <div class="call"><span class="ic">◆</span><span><b>add_objects</b> <span class="r">· table, 4 legs, chair, mug, bowl…</span></span></div>
-        <div class="call"><span class="ic">◆</span><span><b>render</b> <span class="r">· front, right, top, iso</span></span></div>
-        <div class="call"><span class="ic warn">!</span><span><b>inspect</b> <span class="warn">backrest floats 1.2 mm above the seat</span></span></div>
-        <div class="call"><span class="ic">◆</span><span><b>update_objects</b> <span class="r">· backrest y 0.670 → 0.665</span></span></div>
-        <div class="call"><span class="ic ok">✓</span><span><b>inspect</b> <span class="ok">no floating parts</span></span></div>
-        <div class="call"><span class="ic ok">✓</span><span><b>export_obj</b> <span class="r">→ table_set.obj · 14 parts · 11k triangles</span></span></div>
-      </div>
-      <div class="shot">
-        <img src="assets/table_set.png" alt="The dining table scene rendered from front, right, top and perspective views" width="804" height="804" loading="lazy">
-        <p>What the agent sees: four labeled views with axes and a measuring grid, all in one image.</p>
-      </div>
-    </div>
-    <div class="loop">
-      <div class="step"><h3>Describe</h3><p>The agent plans named parts with real sizes, like seat, legs and backrest.</p></div>
-      <div class="step"><h3>Build</h3><p>Primitives, extrusions, lathes and CSG booleans become clean meshes. <code>add_objects</code></p></div>
-      <div class="step"><h3>See &amp; measure</h3><p>Multi-view renders plus exact numbers expose gaps, overlaps and wrong sizes. <code>render</code> <code>inspect</code></p></div>
-      <div class="step"><h3>Export</h3><p>OBJ + MTL with every part named and colored, ready for Blender, Unity or a slicer. <code>export_obj</code></p></div>
-    </div>
-  </div>
-</section>
+<h2>What it is</h2>
+<p>shapeforge is an <a href="https://modelcontextprotocol.io">MCP</a> server: a tool your AI agent can call. It gives the agent a small modeling toolkit designed around how language models work. The agent describes named parts with real dimensions, sees the result rendered from several angles, measures it, corrects mistakes, and exports a standard OBJ file.</p>
+<p>It works with Claude Code, Claude Desktop, GitHub Copilot (VS Code and CLI), Cursor, OpenAI Codex, OpenCode, Windsurf, and any other agent that supports MCP. It's a single native program for macOS, Windows and Linux with nothing else to install.</p>
 
-<section id="features">
-  <div class="wrap">
-    <div class="kicker">Features</div>
-    <h2>A modeling toolkit designed for AI</h2>
-    <p class="sub">Not a human tool with an API bolted on. Every tool is shaped around how language models think and where they struggle.</p>
-    <div class="features">
-      <div class="card">
-        <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.3 7 12 12l8.7-5M12 22V12"/></svg></div>
-        <h3>Describe, don't draw</h3><p>Parts are short JSON descriptions with real dimensions. No vertices, no scripting, and no API to memorize.</p>
-      </div>
-      <div class="card">
-        <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></div>
-        <h3>Sees its own work</h3><p>Front, side, top and 3D views in one image, labeled with axes and grid spacing so the model can reason about direction.</p>
-      </div>
-      <div class="card">
-        <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.4 2.4 0 0 1 0-3.4l2.6-2.6a2.4 2.4 0 0 1 3.4 0z"/><path d="m14.5 12.5 2-2M11.5 9.5l2-2M8.5 6.5l2-2M17.5 15.5l2-2"/></svg></div>
-        <h3>Measures exactly</h3><p>Sizes, gaps, contacts and warnings like "floats 1.2 mm above the seat", because pictures alone don't fix dimensions.</p>
-      </div>
-      <div class="card">
-        <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18"/><path d="m8 7 4-4 4 4M8 17l4 4 4-4"/></svg></div>
-        <h3>Places things precisely</h3><p>Rest a part on a surface, mirror left to right, repeat in rows or rings, align edges. The 3D math is done for the model.</p>
-      </div>
-      <div class="card">
-        <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg></div>
-        <h3>Real CAD-style booleans</h3><p>Union, subtract and intersect with smooth blending for holes, handles and organic joins, simplified into clean, light meshes.</p>
-      </div>
-      <div class="card">
-        <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9z"/></svg></div>
-        <h3>One native binary</h3><p>Fast C++ with GPU rendering through Vulkan and an automatic CPU fallback. It runs locally on macOS, Windows and Linux.</p>
-      </div>
-    </div>
-  </div>
-</section>
+<h2>Install</h2>
+<p>With Node.js installed, one command sets it up for your agent:</p>
+<pre><code>npx -y shapeforge install claude-code</code></pre>
+<p>Replace <code>claude-code</code> with <code>claude-desktop</code>, <code>cursor</code>, <code>windsurf</code>, <code>vscode</code>, <code>copilot-cli</code>, <code>opencode</code>, <code>codex</code>, or <code>all</code>. Then restart the agent.</p>
+<p>Without Node.js, download the program for your system from the <a href="https://github.com/rashid5925/3d-model-generator/releases/latest">latest release</a> and run <code>shapeforge install &lt;agent&gt;</code>. Claude Desktop users can download <code>shapeforge.mcpb</code> instead and double-click it.</p>
 
-<section id="install">
-  <div class="wrap">
-    <div class="kicker">Install</div>
-    <h2>Up and running in one command</h2>
-    <p class="sub">Pick your agent. shapeforge writes the config for you, then you restart the agent and start asking.</p>
-    <div class="install">
-      <div class="tabs" role="tablist" id="tabs"></div>
-      <div class="panel" id="panel" role="tabpanel"></div>
-    </div>
-  </div>
-</section>
+<h2>Try it</h2>
+<p>Ask your agent the way you would brief a designer:</p>
+<blockquote>Model a wooden dining chair, about 45 cm seat height, with a slightly reclined back. Export it as OBJ.</blockquote>
+<blockquote>Make a coffee mug with a handle and a saucer. Show me the front and top views before exporting.</blockquote>
+<p>Models are saved in <code>Documents/shapeforge</code> in your home folder (<code>~/shapeforge</code> on Linux).</p>
 
-<section>
-  <div class="wrap">
-    <div class="kicker">Made with shapeforge</div>
-    <h2>Built by an agent, start to finish</h2>
-    <p class="sub">Every model here was created only through tool calls, the same way your agent will do it.</p>
-    <div class="gallery">
-      <figure><img src="assets/robot.png" alt="Robot and wheel" loading="lazy"><figcaption>Robot: one arm, leg and eye built, the rest mirrored. Eight wheel spokes from a single radial array.</figcaption></figure>
-      <figure><img src="assets/table_set.png" alt="Dining table set" loading="lazy"><figcaption>Dining set with a CSG mug and bowl, placed on the table automatically.</figcaption></figure>
-      <figure><img src="assets/mug_bowl.png" alt="Close-up of the mug and bowl" loading="lazy"><figcaption>Focused render: the agent zooms in to check small details.</figcaption></figure>
-    </div>
-  </div>
-</section>
+<h2>How it works</h2>
+<ol>
+  <li><strong>Describe.</strong> The agent plans the model as named parts: boxes, cylinders, lathe profiles, extrusions, and boolean combinations of them.</li>
+  <li><strong>Build.</strong> shapeforge turns each description into a clean triangle mesh.</li>
+  <li><strong>See.</strong> The agent receives one image with front, side, top and perspective views, labeled with axes and a measuring grid.</li>
+  <li><strong>Measure.</strong> Exact sizes, gaps and contacts catch what pictures miss, for example a backrest floating 1.2 mm above its seat.</li>
+  <li><strong>Fix and export.</strong> Placement tools put parts exactly where they belong. The result is written as OBJ and MTL, one named part per object.</li>
+</ol>
 
-<section>
-  <div class="wrap">
-    <div class="stats">
-      <div class="stat"><b>15</b><span>modeling tools</span></div>
-      <div class="stat"><b>8</b><span>supported agents</span></div>
-      <div class="stat"><b>3</b><span>operating systems</span></div>
-      <div class="stat"><b>0</b><span>dependencies to install</span></div>
-    </div>
-  </div>
-</section>
+<figure>
+  <img src="assets/table_set.png" alt="A dining table scene shown from front, right, top and perspective views" width="804" height="804" loading="lazy">
+  <figcaption>What the agent sees after a render: four labeled views in one image.</figcaption>
+</figure>
 
-<section style="padding-top:0">
-  <div class="wrap">
-    <div class="final">
-      <h2>Give your agent a new skill</h2>
-      <p class="sub" style="margin:0 auto">Free and open source under the MIT license.</p>
-      <div class="cmd"><span class="p">$</span><code>npx -y shapeforge install all</code><button class="copy" data-copy="npx -y shapeforge install all">Copy</button></div>
-      <div class="cta" style="justify-content:center;margin:24px 0 0">
-        <a class="btn primary" href="https://github.com/rashid5925/3d-model-generator/releases/latest">Download a release</a>
-        <a class="btn ghost" href="https://github.com/rashid5925/3d-model-generator">Star on GitHub</a>
-      </div>
-    </div>
-  </div>
-</section>
+<h2>Tools</h2>
+<table>
+  <tr><th>Tool</th><th>Purpose</th></tr>
+  <tr><td><code>add_objects</code></td><td>Create parts: box, sphere, cylinder, cone, capsule, torus, plane, extrusion, lathe, mesh, boolean (CSG), group</td></tr>
+  <tr><td><code>update_objects</code>, <code>delete_objects</code>, <code>undo</code></td><td>Edit, remove, step back</td></tr>
+  <tr><td><code>place_on</code>, <code>align_objects</code>, <code>mirror_object</code>, <code>array_object</code></td><td>Exact placement, symmetry and repetition</td></tr>
+  <tr><td><code>render</code></td><td>Images from any angle, with labels, highlighting and zoom</td></tr>
+  <tr><td><code>inspect</code></td><td>Sizes, positions, volume, contacts and warnings</td></tr>
+  <tr><td><code>export_obj</code>, <code>save_scene</code>, <code>load_scene</code></td><td>OBJ export and editable scene files</td></tr>
+</table>
+
+<h2>Source</h2>
+<p>shapeforge is written in C++20 with no third-party dependencies. It renders with Vulkan and falls back to a built-in CPU renderer. The code, documentation and issue tracker are on <a href="https://github.com/rashid5925/3d-model-generator">GitHub</a>.</p>
 
 <footer>
-  <div class="wrap">
-    <span>shapeforge · MIT License · built by <a href="https://github.com/rashid5925">@rashid5925</a></span>
-    <span><a href="https://github.com/rashid5925/3d-model-generator">GitHub</a> · <a href="https://www.npmjs.com/package/shapeforge">npm</a> · <a href="https://github.com/rashid5925/3d-model-generator/releases">Releases</a></span>
-  </div>
+  shapeforge by <a href="https://github.com/rashid5925">rashid5925</a>. Released under the MIT license.
 </footer>
 
-<script>
-  const agents = [
-    { id: "claude-code", name: "Claude Code", cmd: "npx -y shapeforge install claude-code",
-      alt: 'Or by hand: <code>claude mcp add --scope user shapeforge -- npx -y shapeforge</code>' },
-    { id: "claude-desktop", name: "Claude Desktop", cmd: "npx -y shapeforge install claude-desktop",
-      alt: 'No Node.js? Download <a href="https://github.com/rashid5925/3d-model-generator/releases/latest">shapeforge.mcpb</a> and double-click it.' },
-    { id: "vscode", name: "VS Code · GitHub Copilot", cmd: "npx -y shapeforge install vscode",
-      alt: 'Or: <code>code --add-mcp \'{"name":"shapeforge","command":"npx","args":["-y","shapeforge"]}\'</code>' },
-    { id: "copilot-cli", name: "GitHub Copilot CLI", cmd: "npx -y shapeforge install copilot-cli",
-      alt: "Adds shapeforge to <code>~/.copilot/mcp-config.json</code>." },
-    { id: "cursor", name: "Cursor", cmd: "npx -y shapeforge install cursor",
-      alt: 'Or add to <code>~/.cursor/mcp.json</code>: <code>{"mcpServers":{"shapeforge":{"command":"npx","args":["-y","shapeforge"]}}}</code>' },
-    { id: "codex", name: "OpenAI Codex", cmd: "npx -y shapeforge install codex",
-      alt: "Or: <code>codex mcp add shapeforge -- npx -y shapeforge</code>" },
-    { id: "opencode", name: "OpenCode", cmd: "npx -y shapeforge install opencode",
-      alt: 'Adds a <code>"local"</code> server to <code>~/.config/opencode/opencode.json</code>.' },
-    { id: "windsurf", name: "Windsurf", cmd: "npx -y shapeforge install windsurf",
-      alt: "Adds shapeforge to <code>~/.codeium/windsurf/mcp_config.json</code>." },
-  ];
-  const tabs = document.getElementById("tabs");
-  const panel = document.getElementById("panel");
-  function cmdBox(cmd) {
-    return `<div class="cmd"><span class="p">$</span><code>${cmd}</code><button class="copy" data-copy="${cmd}">Copy</button></div>`;
-  }
-  function show(i) {
-    const a = agents[i];
-    [...tabs.children].forEach((t, j) => t.setAttribute("aria-selected", String(i === j)));
-    panel.innerHTML = `<h3>${a.name}</h3><p>Run this in a terminal, then restart ${a.name.split(" ·")[0]}.</p>${cmdBox(a.cmd)}
-      <div class="alt">${a.alt}</div>
-      <div class="alt">No Node.js? Grab the binary for your OS from <a href="https://github.com/rashid5925/3d-model-generator/releases/latest">Releases</a> and run <code>shapeforge install ${a.id}</code>.</div>
-      <div class="then">Then ask: <em>“Model a wooden chair with a slatted back and export it as OBJ.”</em></div>`;
-  }
-  agents.forEach((a, i) => {
-    const b = document.createElement("button");
-    b.className = "tab"; b.role = "tab"; b.textContent = a.name;
-    b.addEventListener("click", () => show(i));
-    tabs.appendChild(b);
-  });
-  show(0);
-
-  document.addEventListener("click", async (e) => {
-    const btn = e.target.closest(".copy");
-    if (!btn) return;
-    try { await navigator.clipboard.writeText(btn.dataset.copy); } catch (_) {}
-    btn.textContent = "Copied"; btn.classList.add("done");
-    setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("done"); }, 1600);
-  });
-
-  // Reveal the tool-call transcript step by step when it scrolls into view.
-  const chat = document.getElementById("chat");
-  chat.querySelectorAll(".call").forEach((c, i) => (c.style.transitionDelay = `${0.25 + i * 0.45}s`));
-  new IntersectionObserver((entries, obs) => {
-    if (entries.some((en) => en.isIntersecting)) { chat.classList.add("play"); obs.disconnect(); }
-  }, { threshold: 0.35 }).observe(chat);
-</script>
 </body>
 </html>
